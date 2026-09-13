@@ -1,29 +1,41 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Hidden by default on desktop and landscape screens */
+#rotate-device-prompt {
+  display: none;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  background-color: #0d0705;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* CSS Media Query: Triggers only when a mobile screen is in portrait */
+@media screen and (orientation: portrait) and (max-width: 900px) {
+  #rotate-device-prompt {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #140a06;
+    color: #ffb703;
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: Verdana, sans-serif;
+    padding: 20px;
+  }
+
+  .phone-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    animation: rotateHint 1.5s ease-in-out infinite alternate;
+  }
+
+  #rotate-device-prompt p {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffd166;
+  }
 }
 
-#game-container {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-canvas {
-  display: block;
-  box-shadow: 0 0 35px rgba(255, 153, 51, 0.25);
-  border-radius: 6px;
+@keyframes rotateHint {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(90deg); }
 }
