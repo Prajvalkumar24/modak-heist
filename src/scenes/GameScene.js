@@ -17,17 +17,20 @@ export default class GameScene extends Phaser.Scene {
     this.timeLeft = Math.max(70 - this.currentLevel * 4, 30);
     this.guardCount = Math.min(2 + Math.floor(this.currentLevel * 0.7), 5);
     this.score = 0;
-    this.bellsLeft = 3;
     this.isGameOver = false;
 
+    // Automatic Idle Bell Detection
+    this.idleSeconds = 0;
+    this.lastPlayerPos = { x: 0, y: 0 };
+
     this.arena = {
-      x: 20,
-      y: 56,
-      w: width - 40,
-      h: height - 76
+      x: 16,
+      y: 50,
+      w: width - 32,
+      h: height - 66
     };
 
-    // 1. Tiled Courtyard Stone Floor
+    // 1. Tiled Courtyard Floor
     this.add.tileSprite(
       this.arena.x + this.arena.w / 2,
       this.arena.y + this.arena.h / 2,
@@ -36,13 +39,13 @@ export default class GameScene extends Phaser.Scene {
       'floor_tile'
     ).setDepth(0);
 
-    // 2. Docked Ornate HUD
+    // 2. Clean Top HUD (No Bell Ammo)
     this.createHeaderHUD(width);
 
-    // 3. Aarti Countdown Timer
+    // 3. Game Timer & Idle Check Loop (1 second tick)
     this.timerEvent = this.time.addEvent({
       delay: 1000,
-      callback: this.tickTimer,
+      callback: this.tickSecond,
       callbackScope: this,
       loop: true
     });
@@ -51,11 +54,11 @@ export default class GameScene extends Phaser.Scene {
     this.walls = this.physics.add.staticGroup();
     this.spawnStructuredMap();
 
-    // 5. Lord Ganesha Sanctum & Lamps
+    // 5. Lord Ganesha Sanctum & Diyas
     const altarX = this.arena.x + this.arena.w / 2;
-    const altarY = this.arena.y + 64;
+    const altarY = this.arena.y + 60;
     this.altar = this.physics.add.sprite(altarX, altarY, 'altar_tex').setDepth(10);
-    this.add.text(altarX, altarY - 44, '॥ श्री गणेशाय नमः ॥', {
+    this.add.text(altarX, altarY - 42, '॥ श्री गणेशाय नमः ॥', {
       fontSize: '13px',
       fontStyle: 'bold',
       color: '#ffd166',
@@ -65,8 +68,19 @@ export default class GameScene extends Phaser.Scene {
     this.spawnSanctumLamps(altarX, altarY);
 
     // 6. Player (Mooshak)
-    this.player = new Player(this, this.arena.x + 45, this.arena.y + this.arena.h - 45);
+    this.player = new Player(this, this.arena.x + 100, this.arena.y + this.arena.h - 50);
+    this.lastPlayerPos = { x: this.player.x, y: this.player.y };
     this.physics.add.collider(this.player, this.walls);
+
+    // Idle warning popup directly over Mooshak
+    this.idleWarningText = this.add.text(this.player.x, this.player.y - 22, '', {
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#ffd166',
+      fontFamily: 'Verdana',
+      backgroundColor: '#1a0903',
+      padding: { x: 5, y: 2 }
+    }).setOrigin(0.5).setDepth(30).setVisible(false);
 
     // 7. Guards
     this.guards = [];
@@ -81,9 +95,11 @@ export default class GameScene extends Phaser.Scene {
     this.modaks = this.physics.add.group();
     this.spawnSafeModaks();
 
-    // 9. Input & Mobile Controls
-    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.createMobileControls(width, height);
+    // 9. Controls: STRICT Mobile/Tablet Check (Never on Laptops)
+    const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobileDevice) {
+      this.createMobileControls(width, height);
+    }
 
     // Overlaps
     this.physics.add.overlap(this.player, this.modaks, this.collectModak, null, this);
@@ -91,33 +107,26 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createHeaderHUD(width) {
-    const header = this.add.rectangle(width / 2, 28, width, 56, 0x140a06);
+    const header = this.add.rectangle(width / 2, 24, width, 48, 0x140a06);
     header.setStrokeStyle(2, 0xd4a373);
     header.setDepth(20);
 
-    this.levelBadge = this.add.text(30, 26, `LVL ${this.currentLevel}`, {
-      fontSize: '17px',
+    this.levelBadge = this.add.text(28, 24, `LVL ${this.currentLevel}`, {
+      fontSize: '16px',
       fontStyle: 'bold',
       color: '#ffb703',
       fontFamily: 'Verdana'
     }).setOrigin(0, 0.5).setDepth(21);
 
-    this.scoreText = this.add.text(width * 0.35, 26, `Modaks: 0 / ${this.targetModaks}`, {
-      fontSize: '17px',
+    this.scoreText = this.add.text(width / 2, 24, `Modaks: 0 / ${this.targetModaks}`, {
+      fontSize: '16px',
       fontStyle: 'bold',
       color: '#ffffff',
       fontFamily: 'Verdana'
     }).setOrigin(0.5).setDepth(21);
 
-    this.bellText = this.add.text(width * 0.65, 26, `🔔 Bells: ${this.bellsLeft}`, {
-      fontSize: '17px',
-      fontStyle: 'bold',
-      color: '#ffd166',
-      fontFamily: 'Verdana'
-    }).setOrigin(0.5).setDepth(21);
-
-    this.timerText = this.add.text(width - 30, 26, `Aarti: ${this.timeLeft}s`, {
-      fontSize: '17px',
+    this.timerText = this.add.text(width - 28, 24, `Aarti: ${this.timeLeft}s`, {
+      fontSize: '16px',
       fontStyle: 'bold',
       color: '#06d6a0',
       fontFamily: 'Verdana'
@@ -125,51 +134,75 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls(width, height) {
-    const dpadY = height - 90;
-    const dpadX = 90;
+    const dpadY = height - 75;
+    const dpadX = 75;
 
     const makeBtn = (x, y, label, callback) => {
-      const circle = this.add.circle(x, y, 28, 0x3d1a08, 0.65).setStrokeStyle(2, 0xd4a373).setInteractive().setDepth(30);
-      const text = this.add.text(x, y, label, { fontSize: '18px', fontStyle: 'bold', color: '#ffd166' }).setOrigin(0.5).setDepth(31);
+      const circle = this.add.circle(x, y, 25, 0x3d1a08, 0.65).setStrokeStyle(2, 0xd4a373).setInteractive().setDepth(30);
+      this.add.text(x, y, label, { fontSize: '16px', fontStyle: 'bold', color: '#ffd166' }).setOrigin(0.5).setDepth(31);
       circle.on('pointerdown', callback);
       circle.on('pointerup', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
       circle.on('pointerout', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
     };
 
-    makeBtn(dpadX, dpadY - 45, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
-    makeBtn(dpadX, dpadY + 45, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
-    makeBtn(dpadX - 45, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
-    makeBtn(dpadX + 45, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
-
-    // Mobile Action Button for Bell Distraction
-    const bellBtn = this.add.circle(width - 80, height - 80, 36, 0xb8860b, 0.8).setStrokeStyle(2, 0xffd166).setInteractive().setDepth(30);
-    this.add.text(width - 80, height - 80, '🔔', { fontSize: '24px' }).setOrigin(0.5).setDepth(31);
-    bellBtn.on('pointerdown', () => this.ringDistractionBell());
+    makeBtn(dpadX, dpadY - 40, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
+    makeBtn(dpadX, dpadY + 40, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
+    makeBtn(dpadX - 40, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
+    makeBtn(dpadX + 40, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
   }
 
-  ringDistractionBell() {
-    if (this.bellsLeft <= 0 || this.isGameOver) return;
-    this.bellsLeft--;
-    this.bellText.setText(`🔔 Bells: ${this.bellsLeft}`);
+  tickSecond() {
+    if (this.isGameOver) return;
+
+    // 1. Aarti Countdown
+    this.timeLeft -= 1;
+    this.timerText.setText(`Aarti: ${this.timeLeft}s`);
+    if (this.timeLeft <= 10) this.timerText.setColor('#ff3333');
+    if (this.timeLeft <= 0) this.handleDefeat('Aarti began before offerings reached Ganesha!');
+
+    // 2. Idle Detection (rings bell automatically after 8 seconds of camping)
+    const distMoved = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.lastPlayerPos.x, this.lastPlayerPos.y);
+
+    if (distMoved < 4) {
+      this.idleSeconds += 1;
+
+      if (this.idleSeconds >= 5 && this.idleSeconds < 8) {
+        const left = 8 - this.idleSeconds;
+        this.idleWarningText.setText(`🔔 Clink in ${left}s...`).setVisible(true);
+      } else if (this.idleSeconds >= 8) {
+        this.triggerAutomaticBellAlert();
+        this.idleSeconds = 0;
+        this.idleWarningText.setVisible(false);
+      }
+    } else {
+      this.idleSeconds = 0;
+      this.idleWarningText.setVisible(false);
+    }
+
+    this.lastPlayerPos = { x: this.player.x, y: this.player.y };
+  }
+
+  triggerAutomaticBellAlert() {
+    if (this.isGameOver) return;
 
     if (window.SoundFX) window.SoundFX.bell();
 
-    // Spawn expanding ripple effect at Mooshak's position
-    const ripple = this.add.circle(this.player.x, this.player.y, 10, 0xffd166, 0.6).setDepth(14);
+    // Expanding chime wave
+    const wave = this.add.circle(this.player.x, this.player.y, 12, 0xffd166, 0.7).setDepth(14);
     this.tweens.add({
-      targets: ripple,
-      radius: 180,
+      targets: wave,
+      radius: 260,
       alpha: 0,
-      duration: 700,
-      onComplete: () => ripple.destroy()
+      duration: 750,
+      onComplete: () => wave.destroy()
     });
 
-    // Alert nearby guards within 220px
-    const distractionPoint = { x: this.player.x, y: this.player.y };
+    // Guards within range rush to inspect the sound
+    const alertPoint = { x: this.player.x, y: this.player.y };
     this.guards.forEach(g => {
-      const dist = Phaser.Math.Distance.Between(g.x, g.y, distractionPoint.x, distractionPoint.y);
-      if (dist < 260) {
-        g.distract(distractionPoint);
+      const dist = Phaser.Math.Distance.Between(g.x, g.y, alertPoint.x, alertPoint.y);
+      if (dist < 280) {
+        g.distract(alertPoint);
       }
     });
   }
@@ -209,7 +242,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     const cx = a.x + a.w / 2;
-    const cy = a.y + 64;
+    const cy = a.y + 60;
     const sanctumWalls = [
       { x: cx - 85, y: cy + 15, w: 10, h: 96 },
       { x: cx + 85, y: cy + 15, w: 10, h: 96 },
@@ -225,11 +258,11 @@ export default class GameScene extends Phaser.Scene {
     });
 
     const sectors = [
-      { minX: a.x + 80, maxX: a.x + 240, minY: a.y + 140, maxY: a.y + 260 },
-      { minX: a.x + a.w - 240, maxX: a.x + a.w - 80, minY: a.y + 140, maxY: a.y + 260 },
-      { minX: a.x + 80, maxX: a.x + 260, minY: a.y + 290, maxY: a.y + 420 },
-      { minX: a.x + a.w - 260, maxX: a.x + a.w - 80, minY: a.y + 290, maxY: a.y + 420 },
-      { minX: a.x + a.w / 2 - 120, maxX: a.x + a.w / 2 + 120, minY: a.y + 220, maxY: a.y + 360 }
+      { minX: a.x + 140, maxX: a.x + 260, minY: a.y + 130, maxY: a.y + 240 },
+      { minX: a.x + a.w - 260, maxX: a.x - 140 + a.w, minY: a.y + 130, maxY: a.y + 240 },
+      { minX: a.x + 150, maxX: a.x + 300, minY: a.y + 280, maxY: a.y + 380 },
+      { minX: a.x + a.w - 300, maxX: a.x + a.w - 150, minY: a.y + 280, maxY: a.y + 380 },
+      { minX: a.x + a.w / 2 - 100, maxX: a.x + a.w / 2 + 100, minY: a.y + 200, maxY: a.y + 320 }
     ];
 
     sectors.forEach(sec => {
@@ -277,14 +310,6 @@ export default class GameScene extends Phaser.Scene {
         placed++;
       }
     }
-  }
-
-  tickTimer() {
-    if (this.isGameOver) return;
-    this.timeLeft -= 1;
-    this.timerText.setText(`Aarti: ${this.timeLeft}s`);
-    if (this.timeLeft <= 10) this.timerText.setColor('#ff3333');
-    if (this.timeLeft <= 0) this.handleDefeat('Aarti began before offerings reached Ganesha!');
   }
 
   collectModak(player, modak) {
@@ -352,12 +377,11 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.isGameOver) return;
 
-    // Spacebar triggers bell distraction
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-      this.ringDistractionBell();
-    }
-
     this.player.update();
+
+    if (this.idleWarningText.visible) {
+      this.idleWarningText.setPosition(this.player.x, this.player.y - 24);
+    }
 
     for (const g of this.guards) {
       g.update(this.player, this.walls.getChildren(), () => {

@@ -1,9 +1,42 @@
-/* Hidden by default on desktop and landscape screens */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #0d0603 !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0d0603;
+}
+
+canvas {
+  display: block;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.95);
+  background-color: #0d0603 !important;
+}
+
+/* Orientation prompt on phones */
 #rotate-device-prompt {
   display: none;
 }
 
-/* CSS Media Query: Triggers only when a mobile screen is in portrait */
 @media screen and (orientation: portrait) and (max-width: 900px) {
   #rotate-device-prompt {
     display: flex;
@@ -12,20 +45,19 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #140a06;
+    background: #0d0603;
     color: #ffb703;
     z-index: 99999;
     justify-content: center;
     align-items: center;
     text-align: center;
     font-family: Verdana, sans-serif;
-    padding: 20px;
+    padding: 24px;
   }
 
   .phone-icon {
     font-size: 48px;
     margin-bottom: 16px;
-    animation: rotateHint 1.5s ease-in-out infinite alternate;
   }
 
   #rotate-device-prompt p {
@@ -33,9 +65,4 @@
     font-weight: bold;
     color: #ffd166;
   }
-}
-
-@keyframes rotateHint {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(90deg); }
 }
