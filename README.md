@@ -2,7 +2,7 @@
 
 > A 2D top-down stealth-puzzle game built for the **Ganesh Chaturthi Game Design Contest**. Play as Lord Ganesha's loyal vahana, Mooshak, navigating an ancient temple courtyard to gather sacred Modaks before the morning Aarti concludes!
 
-🎮 **Play Live:** https://prajvalkumar24.github.io/modak-heist/
+🎮 **Play Live:** https://modak-heist.vercel.app/
 
 ---
 
