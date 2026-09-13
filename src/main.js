@@ -5,11 +5,11 @@ import GameOverScene from './scenes/GameOverScene.js';
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
+  width: 960,
+  height: 540,
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1024,
-    height: 576
+    autoCenter: Phaser.Scale.CENTER_BOTH
   },
   physics: {
     default: 'arcade',
@@ -21,4 +21,4 @@ const config = {
   scene: [BootScene, GameScene, GameOverScene]
 };
 
-new Phaser.Game(config);
+window.game = new Phaser.Game(config);
