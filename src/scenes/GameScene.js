@@ -6,9 +6,11 @@ export default class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
-  init(data) {
-    this.currentLevel = data.level || 1;
-  }
+ init(data) {
+  this.currentLevel = data.level || 1;
+  this.levelsCleared = data.levelsCleared || 0;
+  this.totalModaks = data.totalModaks || 0;
+}
 
   create() {
     const { width, height } = this.scale;
@@ -313,66 +315,72 @@ export default class GameScene extends Phaser.Scene {
   }
 
   collectModak(player, modak) {
-    modak.destroy();
-    if (window.SoundFX) window.SoundFX.bell();
-    this.score += 1;
-    this.scoreText.setText(`Modaks: ${this.score} / ${this.targetModaks}`);
+  modak.destroy();
+  if (window.SoundFX) window.SoundFX.bell();
+  this.score += 1;
+  this.totalModaks += 1; // 1 modak = 1 lifetime point
+  this.scoreText.setText(`Modaks: ${this.score} / ${this.targetModaks}`);
 
-    if (this.score >= this.targetModaks) {
-      this.scoreText.setColor('#06d6a0');
-      this.scoreText.setText('ALL MODAKS SECURED! OFFER TO GANESHA!');
-    }
+  if (this.score >= this.targetModaks) {
+    this.scoreText.setColor('#06d6a0');
+    this.scoreText.setText('ALL MODAKS SECURED! OFFER TO GANESHA!');
   }
+}
 
   reachAltar() {
-    if (this.score < this.targetModaks || this.isGameOver) return;
-    this.isGameOver = true;
-    this.timerEvent.remove();
-    this.player.body.setVelocity(0);
+  if (this.score < this.targetModaks || this.isGameOver) return;
+  this.isGameOver = true;
+  this.timerEvent.remove();
+  this.player.body.setVelocity(0);
 
-    this.guards.forEach(g => {
-      g.body.setVelocity(0);
-      if (g.visionGraphics) g.visionGraphics.clear();
+  const cleared = this.levelsCleared + 1;
+  const nextLvl = this.currentLevel + 1;
+
+  this.guards.forEach(g => {
+    g.body.setVelocity(0);
+    if (g.visionGraphics) g.visionGraphics.clear();
+  });
+
+  if (window.SoundFX) window.SoundFX.victory();
+
+  const p = this.add.particles(this.altar.x, this.altar.y, 'petal_tex', {
+    speed: { min: -180, max: 180 },
+    scale: { start: 1.5, end: 0 },
+    blendMode: 'ADD',
+    lifespan: 1600,
+    quantity: 50
+  });
+  p.explode();
+
+  this.time.delayedCall(1600, () => {
+    this.scene.restart({
+      level: nextLvl,
+      levelsCleared: cleared,
+      totalModaks: this.totalModaks
     });
-
-    if (window.SoundFX) window.SoundFX.victory();
-
-    const p = this.add.particles(this.altar.x, this.altar.y, 'petal_tex', {
-      speed: { min: -180, max: 180 },
-      scale: { start: 1.5, end: 0 },
-      blendMode: 'ADD',
-      lifespan: 1600,
-      quantity: 50
-    });
-    p.explode();
-
-    this.time.delayedCall(1600, () => {
-      this.scene.restart({ level: this.currentLevel + 1 });
-    });
-  }
+  });
+}
 
   handleDefeat(msg) {
-    if (this.isGameOver) return;
-    this.isGameOver = true;
-    this.timerEvent.remove();
-    this.player.body.setVelocity(0);
+  if (this.isGameOver) return;
+  this.isGameOver = true;
+  this.timerEvent.remove();
+  this.player.body.setVelocity(0);
 
-    this.guards.forEach(g => {
-      g.body.setVelocity(0);
-      if (g.visionGraphics) g.visionGraphics.clear();
+  this.guards.forEach(g => {
+    g.body.setVelocity(0);
+    if (g.visionGraphics) g.visionGraphics.clear();
+  });
+
+  if (window.SoundFX) window.SoundFX.alert();
+
+  this.time.delayedCall(1200, () => {
+    this.scene.start('GameOverScene', {
+      levelsCleared: this.levelsCleared,
+      totalModaks: this.totalModaks
     });
-
-    if (window.SoundFX) window.SoundFX.alert();
-
-    this.time.delayedCall(1200, () => {
-      this.scene.start('GameOverScene', {
-        victory: false,
-        score: this.score,
-        target: this.targetModaks,
-        level: this.currentLevel
-      });
-    });
-  }
+  });
+}
 
   update() {
     if (this.isGameOver) return;
