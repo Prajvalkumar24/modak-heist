@@ -11,16 +11,25 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
     this.arena = arena;
     this.patrolSpeed = 80;
     this.chaseSpeed = 135;
+    this.investigateSpeed = 95;
     this.visionRadius = 160;
     this.visionAngle = Phaser.Math.DegToRad(60);
     this.facingAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
 
-    this.state = 'WANDER';
+    this.state = 'WANDER'; // 'WANDER', 'LOOK_AROUND', 'INVESTIGATE', 'CHASE'
     this.targetPoint = this.getRandomFloorPoint();
     this.stateTimer = 0;
 
     this.visionGraphics = scene.add.graphics();
     this.visionGraphics.setDepth(5);
+
+    // Alert indicator icon ("!" text)
+    this.alertText = scene.add.text(this.x, this.y - 24, '!', {
+      fontSize: '20px',
+      fontStyle: 'bold',
+      color: '#ff0000',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(25).setVisible(false);
   }
 
   getRandomFloorPoint() {
@@ -30,18 +39,54 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
     };
   }
 
+  distract(point) {
+    if (this.state === 'CHASE') return;
+    this.state = 'INVESTIGATE';
+    this.targetPoint = { x: point.x, y: point.y };
+    this.stateTimer = 180; // 3 seconds at 60fps
+    this.alertText.setText('?').setColor('#ffb703').setVisible(true);
+  }
+
   update(player, walls = [], onCatch) {
+    this.alertText.setPosition(this.x, this.y - 24);
+
     if (this.state === 'CHASE') {
+      this.alertText.setText('!').setColor('#ff0000').setVisible(true);
       this.chasePlayer(player, onCatch);
+    } else if (this.state === 'INVESTIGATE') {
+      this.investigateDistraction();
+      this.scanForPlayer(player, walls);
     } else if (this.state === 'LOOK_AROUND') {
+      this.alertText.setVisible(false);
       this.lookAround();
       this.scanForPlayer(player, walls);
     } else {
+      this.alertText.setVisible(false);
       this.wander();
       this.scanForPlayer(player, walls);
     }
 
     this.renderVisionCone(walls);
+  }
+
+  investigateDistraction() {
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, this.targetPoint.x, this.targetPoint.y);
+    if (dist < 20 || --this.stateTimer <= 0) {
+      this.setVelocity(0);
+      this.state = 'LOOK_AROUND';
+      this.stateTimer = 60;
+      this.alertText.setVisible(false);
+      return;
+    }
+
+    const angle = Phaser.Math.Angle.Between(this.x, this.y, this.targetPoint.x, this.targetPoint.y);
+    this.facingAngle = Phaser.Math.Angle.RotateTo(this.facingAngle, angle, 0.1);
+    this.setRotation(this.facingAngle);
+
+    this.setVelocity(
+      Math.cos(this.facingAngle) * this.investigateSpeed,
+      Math.sin(this.facingAngle) * this.investigateSpeed
+    );
   }
 
   wander() {
@@ -133,7 +178,6 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
       const angle = startAngle + step * i;
       let rayLen = this.visionRadius;
 
-      // Check ray collision with outer boundaries & walls to stop light bleeding
       const targetX = this.x + Math.cos(angle) * this.visionRadius;
       const targetY = this.y + Math.sin(angle) * this.visionRadius;
       const ray = new Phaser.Geom.Line(this.x, this.y, targetX, targetY);
@@ -170,6 +214,9 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
     if (this.visionGraphics) {
       this.visionGraphics.clear();
       this.visionGraphics.destroy();
+    }
+    if (this.alertText) {
+      this.alertText.destroy();
     }
     super.destroy(fromScene);
   }
