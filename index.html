@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Modak Heist: Mooshak's Stealth Delivery</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
 </head>
 <body>
-  <div id="game-container"></div>
-
+  <!-- Orientation Prompt: Blocks portrait squishing completely -->
   <div id="rotate-device-prompt">
     <div class="rotate-content">
       <div class="phone-icon">📱 ➔ 📲</div>
-      <p>Please rotate your phone to Landscape mode to play!</p>
+      <p>Please rotate your phone to <b>Landscape</b> to play!</p>
     </div>
   </div>
+
+  <div id="game-container"></div>
 
   <script type="module" src="./src/main.js"></script>
 </body>

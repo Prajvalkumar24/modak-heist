@@ -136,22 +136,33 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls(width, height) {
-    const dpadY = height - 75;
-    const dpadX = 75;
+  // Lift D-pad up from the bottom edge so device navigation bars don't obstruct it
+  const dpadY = height - 90;
+  const dpadX = 90;
 
-    const makeBtn = (x, y, label, callback) => {
-      const circle = this.add.circle(x, y, 25, 0x3d1a08, 0.65).setStrokeStyle(2, 0xd4a373).setInteractive().setDepth(30);
-      this.add.text(x, y, label, { fontSize: '16px', fontStyle: 'bold', color: '#ffd166' }).setOrigin(0.5).setDepth(31);
-      circle.on('pointerdown', callback);
-      circle.on('pointerup', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
-      circle.on('pointerout', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
-    };
+  const makeBtn = (x, y, label, callback) => {
+    const circle = this.add.circle(x, y, 26, 0x3d1a08, 0.75)
+      .setStrokeStyle(2, 0xd4a373)
+      .setInteractive()
+      .setDepth(200);
 
-    makeBtn(dpadX, dpadY - 40, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
-    makeBtn(dpadX, dpadY + 40, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
-    makeBtn(dpadX - 40, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
-    makeBtn(dpadX + 40, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
-  }
+    this.add.text(x, y, label, { 
+      fontSize: '16px', 
+      fontStyle: 'bold', 
+      color: '#ffd166',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(201);
+
+    circle.on('pointerdown', callback);
+    circle.on('pointerup', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
+    circle.on('pointerout', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
+  };
+
+  makeBtn(dpadX, dpadY - 44, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
+  makeBtn(dpadX, dpadY + 44, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
+  makeBtn(dpadX - 44, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
+  makeBtn(dpadX + 44, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
+}
 
   tickSecond() {
     if (this.isGameOver) return;
