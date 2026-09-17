@@ -98,7 +98,10 @@ export default class GameScene extends Phaser.Scene {
     this.spawnSafeModaks();
 
     // 9. Controls: STRICT Mobile/Tablet Check (Never on Laptops)
-    const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+   // 9. Mobile & Tablet Only Detection (Strict: never triggers on standard laptops/desktops)
+    const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.matchMedia('(hover: none)').matches);
+
     if (isMobileDevice) {
       this.createMobileControls(width, height);
     }
@@ -136,33 +139,41 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls(width, height) {
-  // Lift D-pad up from the bottom edge so device navigation bars don't obstruct it
-  const dpadY = height - 90;
-  const dpadX = 90;
+    const dpadY = height - 90;
+    const dpadX = 95;
 
-  const makeBtn = (x, y, label, callback) => {
-    const circle = this.add.circle(x, y, 26, 0x3d1a08, 0.75)
-      .setStrokeStyle(2, 0xd4a373)
-      .setInteractive()
-      .setDepth(200);
+    const makeBtn = (x, y, label, callback) => {
+      const circle = this.add.circle(x, y, 28, 0x3d1a08, 0.85)
+        .setStrokeStyle(3, 0xffb703)
+        .setInteractive()
+        .setDepth(500);
 
-    this.add.text(x, y, label, { 
-      fontSize: '16px', 
-      fontStyle: 'bold', 
-      color: '#ffd166',
-      fontFamily: 'Verdana'
-    }).setOrigin(0.5).setDepth(201);
+      this.add.text(x, y, label, { 
+        fontSize: '18px', 
+        fontStyle: 'bold', 
+        color: '#ffd166',
+        fontFamily: 'Verdana'
+      }).setOrigin(0.5).setDepth(501);
 
-    circle.on('pointerdown', callback);
-    circle.on('pointerup', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
-    circle.on('pointerout', () => { this.player.touchVelocity = { x: 0, y: 0 }; });
-  };
+      circle.on('pointerdown', () => {
+        circle.setFillStyle(0xd97706, 0.95);
+        callback();
+      });
 
-  makeBtn(dpadX, dpadY - 44, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
-  makeBtn(dpadX, dpadY + 44, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
-  makeBtn(dpadX - 44, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
-  makeBtn(dpadX + 44, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
-}
+      const release = () => {
+        circle.setFillStyle(0x3d1a08, 0.85);
+        this.player.touchVelocity = { x: 0, y: 0 };
+      };
+
+      circle.on('pointerup', release);
+      circle.on('pointerout', release);
+    };
+
+    makeBtn(dpadX, dpadY - 48, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
+    makeBtn(dpadX, dpadY + 48, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
+    makeBtn(dpadX - 48, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
+    makeBtn(dpadX + 48, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
+  }
 
   tickSecond() {
     if (this.isGameOver) return;
