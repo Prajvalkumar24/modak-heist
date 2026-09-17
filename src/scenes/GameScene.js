@@ -394,25 +394,18 @@ export default class GameScene extends Phaser.Scene {
 }
 
   update() {
-  let vx = 0;
-  let vy = 0;
+    if (this.isGameOver) return;
 
-  if (this.cursors.left.isDown || this.wasd.left.isDown) vx = -this.speed;
-  else if (this.cursors.right.isDown || this.wasd.right.isDown) vx = this.speed;
+    this.player.update();
 
-  if (this.cursors.up.isDown || this.wasd.up.isDown) vy = -this.speed;
-  else if (this.cursors.down.isDown || this.wasd.down.isDown) vy = this.speed;
+    if (this.idleWarningText.visible) {
+      this.idleWarningText.setPosition(this.player.x, this.player.y - 24);
+    }
 
-  // Touch controls override:
-  if (this.touchVelocity && (this.touchVelocity.x !== 0 || this.touchVelocity.y !== 0)) {
-    vx = this.touchVelocity.x * this.speed;
-    vy = this.touchVelocity.y * this.speed;
+    for (const g of this.guards) {
+      g.update(this.player, this.walls.getChildren(), () => {
+        this.handleDefeat('A Temple Guard captured Mooshak!');
+      });
+    }
   }
-
-  this.setVelocity(vx, vy);
-
-  if (vx !== 0 || vy !== 0) {
-    this.setRotation(Math.atan2(vy, vx));
-  }
-}
 }
