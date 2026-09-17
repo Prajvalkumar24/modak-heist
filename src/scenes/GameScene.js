@@ -99,12 +99,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 9. Controls: STRICT Mobile/Tablet Check (Never on Laptops)
    // 9. Mobile & Tablet Only Detection (Strict: never triggers on standard laptops/desktops)
-    const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints > 1 && window.matchMedia('(hover: none)').matches);
-
-    if (isMobileDevice) {
-      this.createMobileControls(width, height);
-    }
+    this.createMobileControls();
 
     // Overlaps
     this.physics.add.overlap(this.player, this.modaks, this.collectModak, null, this);
@@ -138,21 +133,21 @@ export default class GameScene extends Phaser.Scene {
     }).setOrigin(1, 0.5).setDepth(21);
   }
 
-  createMobileControls(width, height) {
+createMobileControls(width, height) {
     const leftPadX = 82;
     const rightPadX = width - 82;
     const padY = height - 88;
 
     const makeBtn = (x, y, label, axis, dir) => {
       // Outer beveled ring (tactile bezel)
-      const outerRing = this.add.circle(x, y, 36, 0x1f0a04, 0.9)
+      this.add.circle(x, y, 36, 0x1f0a04, 0.9)
         .setStrokeStyle(3, 0xd4a373)
         .setDepth(500);
 
       // Inner push pad with generous hit area
       const innerPad = this.add.circle(x, y, 30, 0x3d1708, 0.95)
         .setStrokeStyle(2, 0xffb703)
-        .setInteractive(new Phaser.Geom.Circle(30, 30, 34), Phaser.Geom.Circle.Contains)
+        .setInteractive({ useHandCursor: true })
         .setDepth(501);
 
       const txt = this.add.text(x, y, label, { 
@@ -162,11 +157,10 @@ export default class GameScene extends Phaser.Scene {
         fontFamily: 'Verdana'
       }).setOrigin(0.5).setDepth(502);
 
-      // Multi-touch active tracking per button
-      let activePointerId = null;
+      let holdingPointerId = null;
 
       innerPad.on('pointerdown', (pointer) => {
-        activePointerId = pointer.id;
+        holdingPointerId = pointer.id;
         innerPad.setFillStyle(0xd97706, 1);
         innerPad.setScale(0.92);
         txt.setScale(0.92);
@@ -174,13 +168,14 @@ export default class GameScene extends Phaser.Scene {
       });
 
       const releaseBtn = (pointer) => {
-        if (pointer && activePointerId !== null && pointer.id !== activePointerId) return;
-        activePointerId = null;
-        innerPad.setFillStyle(0x3d1708, 0.95);
-        innerPad.setScale(1);
-        txt.setScale(1);
-        if (this.player.touchVelocity[axis] === dir) {
-          this.player.touchVelocity[axis] = 0;
+        if (holdingPointerId !== null && pointer.id === holdingPointerId) {
+          holdingPointerId = null;
+          innerPad.setFillStyle(0x3d1708, 0.95);
+          innerPad.setScale(1);
+          txt.setScale(1);
+          if (this.player.touchVelocity[axis] === dir) {
+            this.player.touchVelocity[axis] = 0;
+          }
         }
       };
 
