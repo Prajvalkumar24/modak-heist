@@ -139,10 +139,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls(width, height) {
-    const dpadY = height - 90;
-    const dpadX = 95;
+    const leftPadX = 75;
+    const rightPadX = width - 75;
+    const padY = height - 85;
 
-    const makeBtn = (x, y, label, callback) => {
+    const makeBtn = (x, y, label, axis, dir) => {
       const circle = this.add.circle(x, y, 28, 0x3d1a08, 0.85)
         .setStrokeStyle(3, 0xffb703)
         .setInteractive()
@@ -157,22 +158,25 @@ export default class GameScene extends Phaser.Scene {
 
       circle.on('pointerdown', () => {
         circle.setFillStyle(0xd97706, 0.95);
-        callback();
+        this.player.touchVelocity[axis] = dir;
       });
 
       const release = () => {
         circle.setFillStyle(0x3d1a08, 0.85);
-        this.player.touchVelocity = { x: 0, y: 0 };
+        this.player.touchVelocity[axis] = 0;
       };
 
       circle.on('pointerup', release);
       circle.on('pointerout', release);
     };
 
-    makeBtn(dpadX, dpadY - 48, '▲', () => { this.player.touchVelocity = { x: 0, y: -1 }; });
-    makeBtn(dpadX, dpadY + 48, '▼', () => { this.player.touchVelocity = { x: 0, y: 1 }; });
-    makeBtn(dpadX - 48, dpadY, '◄', () => { this.player.touchVelocity = { x: -1, y: 0 }; });
-    makeBtn(dpadX + 48, dpadY, '►', () => { this.player.touchVelocity = { x: 1, y: 0 }; });
+    // Left Thumb: Vertical Movement (Up / Down)
+    makeBtn(leftPadX, padY - 38, '▲', 'y', -1);
+    makeBtn(leftPadX, padY + 38, '▼', 'y', 1);
+
+    // Right Thumb: Horizontal Movement (Left / Right)
+    makeBtn(rightPadX - 38, padY, '◄', 'x', -1);
+    makeBtn(rightPadX + 38, padY, '►', 'x', 1);
   }
 
   tickSecond() {
