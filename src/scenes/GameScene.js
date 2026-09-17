@@ -139,44 +139,62 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls(width, height) {
-    const leftPadX = 75;
-    const rightPadX = width - 75;
-    const padY = height - 85;
+    const leftPadX = 82;
+    const rightPadX = width - 82;
+    const padY = height - 88;
 
     const makeBtn = (x, y, label, axis, dir) => {
-      const circle = this.add.circle(x, y, 28, 0x3d1a08, 0.85)
-        .setStrokeStyle(3, 0xffb703)
-        .setInteractive()
+      // Outer beveled ring (tactile bezel)
+      const outerRing = this.add.circle(x, y, 36, 0x1f0a04, 0.9)
+        .setStrokeStyle(3, 0xd4a373)
         .setDepth(500);
 
-      this.add.text(x, y, label, { 
-        fontSize: '18px', 
+      // Inner push pad with generous hit area
+      const innerPad = this.add.circle(x, y, 30, 0x3d1708, 0.95)
+        .setStrokeStyle(2, 0xffb703)
+        .setInteractive(new Phaser.Geom.Circle(30, 30, 34), Phaser.Geom.Circle.Contains)
+        .setDepth(501);
+
+      const txt = this.add.text(x, y, label, { 
+        fontSize: '22px', 
         fontStyle: 'bold', 
         color: '#ffd166',
         fontFamily: 'Verdana'
-      }).setOrigin(0.5).setDepth(501);
+      }).setOrigin(0.5).setDepth(502);
 
-      circle.on('pointerdown', () => {
-        circle.setFillStyle(0xd97706, 0.95);
+      // Multi-touch active tracking per button
+      let activePointerId = null;
+
+      innerPad.on('pointerdown', (pointer) => {
+        activePointerId = pointer.id;
+        innerPad.setFillStyle(0xd97706, 1);
+        innerPad.setScale(0.92);
+        txt.setScale(0.92);
         this.player.touchVelocity[axis] = dir;
       });
 
-      const release = () => {
-        circle.setFillStyle(0x3d1a08, 0.85);
-        this.player.touchVelocity[axis] = 0;
+      const releaseBtn = (pointer) => {
+        if (pointer && activePointerId !== null && pointer.id !== activePointerId) return;
+        activePointerId = null;
+        innerPad.setFillStyle(0x3d1708, 0.95);
+        innerPad.setScale(1);
+        txt.setScale(1);
+        if (this.player.touchVelocity[axis] === dir) {
+          this.player.touchVelocity[axis] = 0;
+        }
       };
 
-      circle.on('pointerup', release);
-      circle.on('pointerout', release);
+      innerPad.on('pointerup', releaseBtn);
+      innerPad.on('pointerout', releaseBtn);
     };
 
     // Left Thumb: Vertical Movement (Up / Down)
-    makeBtn(leftPadX, padY - 38, '▲', 'y', -1);
-    makeBtn(leftPadX, padY + 38, '▼', 'y', 1);
+    makeBtn(leftPadX, padY - 48, '▲', 'y', -1);
+    makeBtn(leftPadX, padY + 48, '▼', 'y', 1);
 
     // Right Thumb: Horizontal Movement (Left / Right)
-    makeBtn(rightPadX - 38, padY, '◄', 'x', -1);
-    makeBtn(rightPadX + 38, padY, '►', 'x', 1);
+    makeBtn(rightPadX - 48, padY, '◄', 'x', -1);
+    makeBtn(rightPadX + 48, padY, '►', 'x', 1);
   }
 
   tickSecond() {
