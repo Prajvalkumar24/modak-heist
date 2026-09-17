@@ -6,14 +6,17 @@ export default class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
- init(data) {
-  this.currentLevel = data.level || 1;
-  this.levelsCleared = data.levelsCleared || 0;
-  this.totalModaks = data.totalModaks || 0;
-}
+  init(data) {
+    this.currentLevel = data.level || 1;
+    this.levelsCleared = data.levelsCleared || 0;
+    this.totalModaks = data.totalModaks || 0;
+  }
 
   create() {
     const { width, height } = this.scale;
+
+    // Enable multi-touch pointers so both thumbs register at the same time
+    this.input.addPointer(2);
 
     this.targetModaks = Math.min(4 + this.currentLevel, 10);
     this.timeLeft = Math.max(70 - this.currentLevel * 4, 30);
@@ -97,9 +100,13 @@ export default class GameScene extends Phaser.Scene {
     this.modaks = this.physics.add.group();
     this.spawnSafeModaks();
 
-    // 9. Controls: STRICT Mobile/Tablet Check (Never on Laptops)
-   // 9. Mobile & Tablet Only Detection (Strict: never triggers on standard laptops/desktops)
-    this.createMobileControls();
+    // 9. Mobile & Tablet Only Controls (Strictly excluded on laptops)
+    const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.matchMedia('(hover: none)').matches);
+
+    if (isMobileDevice) {
+      this.createMobileControls();
+    }
 
     // Overlaps
     this.physics.add.overlap(this.player, this.modaks, this.collectModak, null, this);
@@ -133,21 +140,22 @@ export default class GameScene extends Phaser.Scene {
     }).setOrigin(1, 0.5).setDepth(21);
   }
 
-createMobileControls(width, height) {
-    const leftPadX = 82;
-    const rightPadX = width - 82;
-    const padY = height - 88;
+  createMobileControls() {
+    const { width, height } = this.scale;
+    const leftPadX = 85;
+    const rightPadX = width - 85;
+    const padY = height - 85;
 
     const makeBtn = (x, y, label, axis, dir) => {
-      // Outer beveled ring (tactile bezel)
-      this.add.circle(x, y, 36, 0x1f0a04, 0.9)
+      // Outer ring
+      this.add.circle(x, y, 36, 0x1f0a04, 0.85)
         .setStrokeStyle(3, 0xd4a373)
         .setDepth(500);
 
-      // Inner push pad with generous hit area
+      // Inner pad with hit area
       const innerPad = this.add.circle(x, y, 30, 0x3d1708, 0.95)
         .setStrokeStyle(2, 0xffb703)
-        .setInteractive({ useHandCursor: true })
+        .setInteractive(new Phaser.Geom.Circle(30, 30, 36), Phaser.Geom.Circle.Contains)
         .setDepth(501);
 
       const txt = this.add.text(x, y, label, { 
@@ -157,10 +165,10 @@ createMobileControls(width, height) {
         fontFamily: 'Verdana'
       }).setOrigin(0.5).setDepth(502);
 
-      let holdingPointerId = null;
+      let currentPointerId = null;
 
       innerPad.on('pointerdown', (pointer) => {
-        holdingPointerId = pointer.id;
+        currentPointerId = pointer.id;
         innerPad.setFillStyle(0xd97706, 1);
         innerPad.setScale(0.92);
         txt.setScale(0.92);
@@ -168,14 +176,13 @@ createMobileControls(width, height) {
       });
 
       const releaseBtn = (pointer) => {
-        if (holdingPointerId !== null && pointer.id === holdingPointerId) {
-          holdingPointerId = null;
-          innerPad.setFillStyle(0x3d1708, 0.95);
-          innerPad.setScale(1);
-          txt.setScale(1);
-          if (this.player.touchVelocity[axis] === dir) {
-            this.player.touchVelocity[axis] = 0;
-          }
+        if (pointer && currentPointerId !== null && pointer.id !== currentPointerId) return;
+        currentPointerId = null;
+        innerPad.setFillStyle(0x3d1708, 0.95);
+        innerPad.setScale(1);
+        txt.setScale(1);
+        if (this.player.touchVelocity[axis] === dir) {
+          this.player.touchVelocity[axis] = 0;
         }
       };
 
@@ -332,6 +339,9 @@ createMobileControls(width, height) {
       const mx = Phaser.Math.Between(a.x + 60, a.x + a.w - 60);
       const my = Phaser.Math.Between(a.y + 140, a.y + a.h - 60);
 
+      if (mx < a.x + 140 && my > a.y + a.h - 130) continue;
+      if (mx > a.x + a.w - 130 && my > a.y + a.h - 130) continue;
+
       const tooClose = placedPoints.some(pt => Phaser.Math.Distance.Between(mx, my, pt.x, pt.y) < 70);
       if (tooClose) continue;
 
@@ -354,72 +364,72 @@ createMobileControls(width, height) {
   }
 
   collectModak(player, modak) {
-  modak.destroy();
-  if (window.SoundFX) window.SoundFX.bell();
-  this.score += 1;
-  this.totalModaks += 1; // 1 modak = 1 lifetime point
-  this.scoreText.setText(`Modaks: ${this.score} / ${this.targetModaks}`);
+    modak.destroy();
+    if (window.SoundFX) window.SoundFX.bell();
+    this.score += 1;
+    this.totalModaks += 1; // 1 modak = 1 lifetime point
+    this.scoreText.setText(`Modaks: ${this.score} / ${this.targetModaks}`);
 
-  if (this.score >= this.targetModaks) {
-    this.scoreText.setColor('#06d6a0');
-    this.scoreText.setText('ALL MODAKS SECURED! OFFER TO GANESHA!');
+    if (this.score >= this.targetModaks) {
+      this.scoreText.setColor('#06d6a0');
+      this.scoreText.setText('ALL MODAKS SECURED! OFFER TO GANESHA!');
+    }
   }
-}
 
   reachAltar() {
-  if (this.score < this.targetModaks || this.isGameOver) return;
-  this.isGameOver = true;
-  this.timerEvent.remove();
-  this.player.body.setVelocity(0);
+    if (this.score < this.targetModaks || this.isGameOver) return;
+    this.isGameOver = true;
+    this.timerEvent.remove();
+    this.player.body.setVelocity(0);
 
-  const cleared = this.levelsCleared + 1;
-  const nextLvl = this.currentLevel + 1;
+    const cleared = this.levelsCleared + 1;
+    const nextLvl = this.currentLevel + 1;
 
-  this.guards.forEach(g => {
-    g.body.setVelocity(0);
-    if (g.visionGraphics) g.visionGraphics.clear();
-  });
-
-  if (window.SoundFX) window.SoundFX.victory();
-
-  const p = this.add.particles(this.altar.x, this.altar.y, 'petal_tex', {
-    speed: { min: -180, max: 180 },
-    scale: { start: 1.5, end: 0 },
-    blendMode: 'ADD',
-    lifespan: 1600,
-    quantity: 50
-  });
-  p.explode();
-
-  this.time.delayedCall(1600, () => {
-    this.scene.restart({
-      level: nextLvl,
-      levelsCleared: cleared,
-      totalModaks: this.totalModaks
+    this.guards.forEach(g => {
+      g.body.setVelocity(0);
+      if (g.visionGraphics) g.visionGraphics.clear();
     });
-  });
-}
+
+    if (window.SoundFX) window.SoundFX.victory();
+
+    const p = this.add.particles(this.altar.x, this.altar.y, 'petal_tex', {
+      speed: { min: -180, max: 180 },
+      scale: { start: 1.5, end: 0 },
+      blendMode: 'ADD',
+      lifespan: 1600,
+      quantity: 50
+    });
+    p.explode();
+
+    this.time.delayedCall(1600, () => {
+      this.scene.restart({
+        level: nextLvl,
+        levelsCleared: cleared,
+        totalModaks: this.totalModaks
+      });
+    });
+  }
 
   handleDefeat(msg) {
-  if (this.isGameOver) return;
-  this.isGameOver = true;
-  this.timerEvent.remove();
-  this.player.body.setVelocity(0);
+    if (this.isGameOver) return;
+    this.isGameOver = true;
+    this.timerEvent.remove();
+    this.player.body.setVelocity(0);
 
-  this.guards.forEach(g => {
-    g.body.setVelocity(0);
-    if (g.visionGraphics) g.visionGraphics.clear();
-  });
-
-  if (window.SoundFX) window.SoundFX.alert();
-
-  this.time.delayedCall(1200, () => {
-    this.scene.start('GameOverScene', {
-      levelsCleared: this.levelsCleared,
-      totalModaks: this.totalModaks
+    this.guards.forEach(g => {
+      g.body.setVelocity(0);
+      if (g.visionGraphics) g.visionGraphics.clear();
     });
-  });
-}
+
+    if (window.SoundFX) window.SoundFX.alert();
+
+    this.time.delayedCall(1200, () => {
+      this.scene.start('GameOverScene', {
+        levelsCleared: this.levelsCleared,
+        totalModaks: this.totalModaks
+      });
+    });
+  }
 
   update() {
     if (this.isGameOver) return;
