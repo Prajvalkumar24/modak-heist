@@ -1,3 +1,8 @@
+// Scratch objects allocated ONCE in memory — zero garbage collection overhead
+const STATIC_RAY = new Phaser.Geom.Line();
+const STATIC_EDGE = new Phaser.Geom.Line();
+const STATIC_OUT = new Phaser.Geom.Point();
+
 export default class Guard extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, arena) {
     const startX = Phaser.Math.Between(arena.x + 80, arena.x + arena.w - 80);
@@ -129,11 +134,11 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
     const halfFov = this.visionAngle / 2;
 
     if (diff <= halfFov || diff >= Math.PI * 2 - halfFov) {
-      const ray = new Phaser.Geom.Line(this.x, this.y, player.x, player.y);
+      STATIC_RAY.setTo(this.x, this.y, player.x, player.y);
       let blocked = false;
 
-      for (const wall of walls) {
-        if (Phaser.Geom.Intersects.LineToRectangle(ray, wall.getBounds())) {
+      for (let i = 0; i < walls.length; i++) {
+        if (Phaser.Geom.Intersects.LineToRectangle(STATIC_RAY, walls[i].getBounds())) {
           blocked = true;
           break;
         }
@@ -170,6 +175,20 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
     const startAngle = this.facingAngle - this.visionAngle / 2;
     const step = this.visionAngle / numRays;
 
+    // Filter to only check walls within guard's proximity
+    const nearLimit = this.visionRadius + 60;
+    const nearLimitSq = nearLimit * nearLimit;
+    const candidateBounds = [];
+
+    for (let w = 0; w < walls.length; w++) {
+      const b = walls[w].getBounds();
+      const dx = b.centerX - this.x;
+      const dy = b.centerY - this.y;
+      if (dx * dx + dy * dy < nearLimitSq) {
+        candidateBounds.push(b);
+      }
+    }
+
     this.visionGraphics.fillStyle(coneColor, coneAlpha);
     this.visionGraphics.beginPath();
     this.visionGraphics.moveTo(this.x, this.y);
@@ -180,23 +199,38 @@ export default class Guard extends Phaser.Physics.Arcade.Sprite {
 
       const targetX = this.x + Math.cos(angle) * this.visionRadius;
       const targetY = this.y + Math.sin(angle) * this.visionRadius;
-      const ray = new Phaser.Geom.Line(this.x, this.y, targetX, targetY);
+      STATIC_RAY.setTo(this.x, this.y, targetX, targetY);
 
-      for (const wall of walls) {
-        const bounds = wall.getBounds();
-        const lines = [
-          new Phaser.Geom.Line(bounds.left, bounds.top, bounds.right, bounds.top),
-          new Phaser.Geom.Line(bounds.right, bounds.top, bounds.right, bounds.bottom),
-          new Phaser.Geom.Line(bounds.right, bounds.bottom, bounds.left, bounds.bottom),
-          new Phaser.Geom.Line(bounds.left, bounds.bottom, bounds.left, bounds.top)
-        ];
+      for (let c = 0; c < candidateBounds.length; c++) {
+        const b = candidateBounds[c];
 
-        for (const line of lines) {
-          const out = new Phaser.Geom.Point();
-          if (Phaser.Geom.Intersects.LineToLine(ray, line, out)) {
-            const hitDist = Phaser.Math.Distance.Between(this.x, this.y, out.x, out.y);
-            if (hitDist < rayLen) rayLen = hitDist;
-          }
+        // 4 Box edges checked using reusable STATIC_EDGE to avoid allocation
+        // Top edge
+        STATIC_EDGE.setTo(b.left, b.top, b.right, b.top);
+        if (Phaser.Geom.Intersects.LineToLine(STATIC_RAY, STATIC_EDGE, STATIC_OUT)) {
+          const hitDist = Phaser.Math.Distance.Between(this.x, this.y, STATIC_OUT.x, STATIC_OUT.y);
+          if (hitDist < rayLen) rayLen = hitDist;
+        }
+
+        // Right edge
+        STATIC_EDGE.setTo(b.right, b.top, b.right, b.bottom);
+        if (Phaser.Geom.Intersects.LineToLine(STATIC_RAY, STATIC_EDGE, STATIC_OUT)) {
+          const hitDist = Phaser.Math.Distance.Between(this.x, this.y, STATIC_OUT.x, STATIC_OUT.y);
+          if (hitDist < rayLen) rayLen = hitDist;
+        }
+
+        // Bottom edge
+        STATIC_EDGE.setTo(b.right, b.bottom, b.left, b.bottom);
+        if (Phaser.Geom.Intersects.LineToLine(STATIC_RAY, STATIC_EDGE, STATIC_OUT)) {
+          const hitDist = Phaser.Math.Distance.Between(this.x, this.y, STATIC_OUT.x, STATIC_OUT.y);
+          if (hitDist < rayLen) rayLen = hitDist;
+        }
+
+        // Left edge
+        STATIC_EDGE.setTo(b.left, b.bottom, b.left, b.top);
+        if (Phaser.Geom.Intersects.LineToLine(STATIC_RAY, STATIC_EDGE, STATIC_OUT)) {
+          const hitDist = Phaser.Math.Distance.Between(this.x, this.y, STATIC_OUT.x, STATIC_OUT.y);
+          if (hitDist < rayLen) rayLen = hitDist;
         }
       }
 
