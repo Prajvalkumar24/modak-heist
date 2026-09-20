@@ -4,7 +4,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Keep preload empty or for external files only
+    // Procedural generation is executed in create() so Phaser registers canvas textures cleanly
   }
 
   create() {
@@ -22,7 +22,8 @@ export default class BootScene extends Phaser.Scene {
       bell: () => {
         if (ctx.state === 'suspended') ctx.resume();
         const now = ctx.currentTime;
-        [1046.5, 1567.98, 2093.0].forEach((freq, idx) => {
+        const freqs = [1046.5, 1567.98, 2093.0];
+        freqs.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
@@ -70,194 +71,216 @@ export default class BootScene extends Phaser.Scene {
   }
 
   generateProceduralTextures() {
-    // 1. Tiled Floor
+    // 1. Carved Ancient Temple Stone Floor
     {
       const cvs = document.createElement('canvas');
       cvs.width = 64;
       cvs.height = 64;
       const ctx = cvs.getContext('2d');
+
       ctx.fillStyle = '#1c0f0a';
       ctx.fillRect(0, 0, 64, 64);
+
       ctx.fillStyle = '#26150e';
       ctx.fillRect(1, 1, 62, 62);
+
       ctx.strokeStyle = '#0d0604';
       ctx.lineWidth = 2;
       ctx.strokeRect(0, 0, 64, 64);
+
       ctx.fillStyle = 'rgba(212, 163, 115, 0.08)';
       ctx.beginPath();
       ctx.arc(32, 32, 14, 0, Math.PI * 2);
       ctx.fill();
+
       this.textures.addCanvas('floor_tile', cvs);
     }
 
-    // 2. High-Visibility Mooshak (Registered to BOTH 'player' and 'player_tex')
+    // 2. High-Definition Mooshak (Mouse with Saffron/Gold Saddle, Big Ears, Whiskers & Tail)
     {
       const cvs = document.createElement('canvas');
-      cvs.width = 36;
-      cvs.height = 24;
+      cvs.width = 40;
+      cvs.height = 26;
       const ctx = cvs.getContext('2d');
 
-      // Shadow
+      // Drop shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(18, 16, 14, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(18, 17, 15, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Tail
+      // Long curled pink tail trailing behind
       ctx.strokeStyle = '#f4a261';
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(6, 12);
-      ctx.quadraticCurveTo(0, 6, 4, 3);
+      ctx.moveTo(7, 13);
+      ctx.quadraticCurveTo(0, 8, 3, 3);
       ctx.stroke();
 
-      // Mouse Body
-      ctx.fillStyle = '#9ca3af';
+      // Plump Mouse Body
+      const bGrad = ctx.createRadialGradient(18, 13, 2, 18, 13, 11);
+      bGrad.addColorStop(0, '#a8a29e');
+      bGrad.addColorStop(0.8, '#78716c');
+      bGrad.addColorStop(1, '#57534e');
+      ctx.fillStyle = bGrad;
       ctx.beginPath();
-      ctx.ellipse(17, 12, 11, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(18, 13, 11, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Saffron & Gold Saddle
+      // Sacred Saffron & Gold Ceremonial Saddle
       ctx.fillStyle = '#dc2626';
-      ctx.fillRect(13, 6, 8, 12);
+      ctx.fillRect(13, 6, 9, 14);
       ctx.strokeStyle = '#facc15';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(13, 6, 8, 12);
+      ctx.strokeRect(13, 6, 9, 14);
 
-      // Head & Snout
+      // Head & Snout (Facing forward right)
       ctx.fillStyle = '#d1d5db';
       ctx.beginPath();
-      ctx.ellipse(26, 12, 6, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(28, 13, 7, 5.5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Nose & Whiskers
+      // Pink Nose Tip
       ctx.fillStyle = '#f472b6';
       ctx.beginPath();
-      ctx.arc(31, 12, 1.8, 0, Math.PI * 2);
+      ctx.arc(35, 13, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = '#ffffff';
+      // Whiskers
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(28, 10); ctx.lineTo(34, 7);
-      ctx.moveTo(28, 14); ctx.lineTo(34, 17);
+      ctx.moveTo(31, 11); ctx.lineTo(39, 8);
+      ctx.moveTo(31, 15); ctx.lineTo(39, 18);
       ctx.stroke();
 
-      // Eyes
+      // Shiny Black Eyes
       ctx.fillStyle = '#000000';
       ctx.beginPath();
-      ctx.arc(26, 9, 1.3, 0, Math.PI * 2);
-      ctx.arc(26, 15, 1.3, 0, Math.PI * 2);
+      ctx.arc(28, 9.5, 1.4, 0, Math.PI * 2);
+      ctx.arc(28, 16.5, 1.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Ears
-      const ear = (x, y) => {
+      // Round Ears with pink interior
+      const drawEar = (x, y) => {
         ctx.fillStyle = '#6b7280';
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#fbcfe8';
         ctx.beginPath();
-        ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
         ctx.fill();
       };
-      ear(20, 5);
-      ear(20, 19);
+      drawEar(22, 5.5);
+      drawEar(22, 20.5);
 
-      this.textures.addCanvas('player', cvs);
+      // Register under all possible keys so missing texture errors never trigger
       this.textures.addCanvas('player_tex', cvs);
+      this.textures.addCanvas('player', cvs);
+      this.textures.addCanvas('mooshak_tex', cvs);
     }
 
-    // 3. Realistic Sleek Temple Prowler Cat
+    // 3. Realistic Sleek Temple Prowler Cat (Pointed Feline Silhouette, Facing Right)
     {
       const cvs = document.createElement('canvas');
-      cvs.width = 44;
-      cvs.height = 44;
+      cvs.width = 46;
+      cvs.height = 36;
       const ctx = cvs.getContext('2d');
 
-      // Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      // Drop shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(22, 24, 16, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(22, 20, 16, 9, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Arching Cat Torso
-      ctx.fillStyle = '#1e1b18';
-      ctx.beginPath();
-      ctx.ellipse(18, 22, 13, 7.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Long Curled Tail
-      ctx.strokeStyle = '#1e1b18';
+      // Curled Feline Tail trailing behind
+      ctx.strokeStyle = '#18120c';
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(6, 22);
-      ctx.quadraticCurveTo(0, 14, 4, 8);
+      ctx.moveTo(10, 18);
+      ctx.quadraticCurveTo(2, 17, 4, 10);
+      ctx.quadraticCurveTo(6, 4, 12, 6);
       ctx.stroke();
 
-      // Cat Head
-      ctx.fillStyle = '#2b2621';
+      // Sleek Dark Cat Torso
+      const cGrad = ctx.createLinearGradient(8, 18, 30, 18);
+      cGrad.addColorStop(0, '#1a0f08');
+      cGrad.addColorStop(0.6, '#2e1c12');
+      cGrad.addColorStop(1, '#3d2518');
+      ctx.fillStyle = cGrad;
       ctx.beginPath();
-      ctx.arc(29, 22, 7, 0, Math.PI * 2);
+      ctx.ellipse(19, 18, 12, 7.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cat Head
+      ctx.fillStyle = '#26160e';
+      ctx.beginPath();
+      ctx.ellipse(30, 18, 6.5, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Pointed Triangular Cat Ears
-      const ear = (x1, y1, tipX, tipY, x2, y2) => {
-        ctx.fillStyle = '#1e1b18';
+      const ear = (baseX, baseY, tipX, tipY, frontX, frontY) => {
+        ctx.fillStyle = '#150a04';
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
+        ctx.moveTo(baseX, baseY);
         ctx.lineTo(tipX, tipY);
-        ctx.lineTo(x2, y2);
+        ctx.lineTo(frontX, frontY);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = '#f87171';
+
+        ctx.fillStyle = '#e57373';
         ctx.beginPath();
-        ctx.moveTo(x1 + 1, y1);
-        ctx.lineTo(tipX, tipY + 2);
-        ctx.lineTo(x2 - 1, y2);
+        ctx.moveTo(baseX + 0.5, baseY);
+        ctx.lineTo(tipX + 1, tipY + (baseY > 18 ? -1 : 1));
+        ctx.lineTo(frontX, frontY);
         ctx.closePath();
         ctx.fill();
       };
-      ear(25, 16, 26, 8, 30, 15);
-      ear(25, 28, 26, 36, 30, 29);
+      ear(26, 13, 23, 5, 30, 12);  // Left Ear
+      ear(26, 23, 23, 31, 30, 24); // Right Ear
 
-      // Emerald Eyes with slit pupils
-      ctx.fillStyle = '#10b981';
+      // Piercing Yellow-Green Cat Eyes (Facing forward directly into the vision cone)
+      ctx.fillStyle = '#a3e635';
       ctx.beginPath();
-      ctx.arc(31, 19, 2, 0, Math.PI * 2);
-      ctx.arc(31, 25, 2, 0, Math.PI * 2);
+      ctx.arc(33, 15, 1.8, 0, Math.PI * 2);
+      ctx.arc(33, 21, 1.8, 0, Math.PI * 2);
       ctx.fill();
 
+      // Slit Pupils
       ctx.fillStyle = '#000000';
-      ctx.fillRect(31, 18, 1, 2.5);
-      ctx.fillRect(31, 24, 1, 2.5);
+      ctx.fillRect(33, 13.8, 0.8, 2.4);
+      ctx.fillRect(33, 19.8, 0.8, 2.4);
 
-      // Whiskers
-      ctx.strokeStyle = '#fef08a';
+      // Whiskers radiating forward
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(33, 20); ctx.lineTo(41, 16);
-      ctx.moveTo(33, 24); ctx.lineTo(41, 28);
+      ctx.moveTo(33, 15); ctx.lineTo(41, 11);
+      ctx.moveTo(34, 18); ctx.lineTo(43, 18);
+      ctx.moveTo(33, 21); ctx.lineTo(41, 25);
       ctx.stroke();
 
       this.textures.addCanvas('guard_tex', cvs);
       this.textures.addCanvas('guard', cvs);
     }
 
-    // 4. Modak
+    // 4. Artisanal Golden Modak with Fluted Folds & Kumkum Tip
     {
       const cvs = document.createElement('canvas');
       cvs.width = 28;
       cvs.height = 28;
       const ctx = cvs.getContext('2d');
+
       ctx.fillStyle = '#fde047';
       ctx.beginPath();
       ctx.moveTo(14, 4);
       ctx.bezierCurveTo(24, 16, 21, 23, 14, 23);
       ctx.bezierCurveTo(7, 23, 4, 16, 14, 4);
       ctx.fill();
+
       ctx.strokeStyle = '#ca8a04';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -265,14 +288,16 @@ export default class BootScene extends Phaser.Scene {
       ctx.moveTo(14, 5); ctx.quadraticCurveTo(11, 14, 10, 21);
       ctx.moveTo(14, 5); ctx.quadraticCurveTo(17, 14, 18, 21);
       ctx.stroke();
+
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
       ctx.arc(14, 4.5, 1.3, 0, Math.PI * 2);
       ctx.fill();
+
       this.textures.addCanvas('modak_tex', cvs);
     }
 
-    // 5. 3D Sculpted Brass Lord Ganesha Murti Statue
+    // 5. 3D Sculpted Brass Lord Ganesha Murti Statue & Stepped Pedestal
     {
       const cvs = document.createElement('canvas');
       cvs.width = 72;
@@ -360,7 +385,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.fillStyle = '#dc2626';
       ctx.fillRect(35, 17, 2, 4);
 
-      // Left hand holding golden modak
+      // Left hand holding modak
       ctx.fillStyle = '#fde047';
       ctx.beginPath();
       ctx.arc(28, 34, 3, 0, Math.PI * 2);

@@ -1,14 +1,20 @@
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, 'mooshak_tex');
+    // Primary key 'player_tex' registered in BootScene
+    super(scene, x, y, 'player_tex');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setCollideWorldBounds(true);
     this.setDepth(15);
-    this.speed = 175;
+    this.setCollideWorldBounds(true);
+    this.body.setSize(22, 16);
+    this.body.setOffset(7, 4);
 
+    this.moveSpeed = 165;
+    this.touchVelocity = { x: 0, y: 0 };
+
+    // Keyboard cursors
     this.cursors = scene.input.keyboard.createCursorKeys();
     this.wasd = scene.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -16,53 +22,33 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       left: Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D
     });
-
-    // Virtual Touch Vector (for mobile touch controls)
-    this.touchVelocity = { x: 0, y: 0 };
-
-    // Movement dust emitter
-    this.dustEmitter = scene.add.particles(0, 0, 'petal_tex', {
-      speed: { min: 5, max: 20 },
-      scale: { start: 0.6, end: 0 },
-      alpha: { start: 0.5, end: 0 },
-      lifespan: 300,
-      blendMode: 'ADD',
-      frequency: 90,
-      emitting: false
-    }).setDepth(12);
   }
 
   update() {
     let vx = 0;
     let vy = 0;
 
-    // Keyboard Input
-    if (this.cursors.left.isDown || this.wasd.left.isDown) vx = -this.speed;
-    else if (this.cursors.right.isDown || this.wasd.right.isDown) vx = this.speed;
+    // Desktop: Keyboard WASD / Arrows
+    if (this.cursors.left.isDown || this.wasd.left.isDown) vx -= 1;
+    if (this.cursors.right.isDown || this.wasd.right.isDown) vx += 1;
+    if (this.cursors.up.isDown || this.wasd.up.isDown) vy -= 1;
+    if (this.cursors.down.isDown || this.wasd.down.isDown) vy += 1;
 
-    if (this.cursors.up.isDown || this.wasd.up.isDown) vy = -this.speed;
-    else if (this.cursors.down.isDown || this.wasd.down.isDown) vy = this.speed;
+    // Mobile: Touch Controls
+    if (this.touchVelocity.x !== 0) vx = this.touchVelocity.x;
+    if (this.touchVelocity.y !== 0) vy = this.touchVelocity.y;
 
-    // Touch / Mobile D-Pad Override
-    if (this.touchVelocity.x !== 0 || this.touchVelocity.y !== 0) {
-      vx = this.touchVelocity.x * this.speed;
-      vy = this.touchVelocity.y * this.speed;
+    if (vx !== 0 && vy !== 0) {
+      // Normalize diagonal movement speed
+      vx *= 0.7071;
+      vy *= 0.7071;
     }
 
-    this.setVelocity(vx, vy);
+    this.setVelocity(vx * this.moveSpeed, vy * this.moveSpeed);
 
+    // Rotate Mooshak towards moving direction
     if (vx !== 0 || vy !== 0) {
-      const angle = Math.atan2(vy, vx);
-      this.setRotation(angle);
-      this.dustEmitter.setPosition(this.x - Math.cos(angle) * 12, this.y - Math.sin(angle) * 12);
-      this.dustEmitter.emitting = true;
-    } else {
-      this.dustEmitter.emitting = false;
+      this.rotation = Math.atan2(vy, vx);
     }
-  }
-
-  destroy(fromScene) {
-    if (this.dustEmitter) this.dustEmitter.destroy();
-    super.destroy(fromScene);
   }
 }
