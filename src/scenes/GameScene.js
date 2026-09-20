@@ -15,6 +15,11 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
+    // Check if player is opening for the first time
+    if (!localStorage.getItem('modak_rules_acknowledged')) {
+      this.showFirstTimeScroll(width, height);
+    }
+
     // Enable multi-touch pointers so both thumbs register at the same time
     this.input.addPointer(2);
 
@@ -199,8 +204,101 @@ export default class GameScene extends Phaser.Scene {
     makeBtn(rightPadX + 48, padY, '►', 'x', 1);
   }
 
+  showFirstTimeScroll(width, height) {
+    this.isTutorialActive = true;
+
+    // Dark backdrop overlay that absorbs touches underneath
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x070302, 0.93)
+      .setDepth(2000)
+      .setInteractive();
+
+    // Sacred Temple Card
+    const boxW = Math.min(width - 48, 640);
+    const boxH = Math.min(height - 40, 420);
+    const box = this.add.rectangle(width / 2, height / 2, boxW, boxH, 0x1a0a05)
+      .setStrokeStyle(3, 0xffb703)
+      .setDepth(2001);
+
+    // Titles
+    const title = this.add.text(width / 2, height / 2 - boxH / 2 + 35, '॥ HOW TO PLAY ॥', {
+      fontSize: '22px',
+      fontStyle: 'bold',
+      color: '#ffd166',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2002);
+
+    const sub = this.add.text(width / 2, height / 2 - boxH / 2 + 65, "Mooshak's Sacred Seva: Temple Rules", {
+      fontSize: '13px',
+      color: '#d4a373',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2002);
+
+    // Rule items
+    const rules = [
+      { bullet: '1.', text: 'Collect all Modaks scattered in the courtyard before the Aarti timer runs out.' },
+      { bullet: '2.', text: 'Once all Modaks are gathered, reach the top Sanctum altar to present the offering.' },
+      { bullet: '3.', text: "Stay out of the guards' golden vision cones! One touch ends your run." },
+      { bullet: '4.', text: 'DO NOT IDLE: Stopping for 8s sounds your bell, drawing guards directly to you.' },
+      { bullet: '5.', text: 'Laptop: WASD / Arrow Keys | Mobile: Use the left and right touch pads.' }
+    ];
+
+    const ruleTexts = [];
+    rules.forEach((r, idx) => {
+      const yPos = height / 2 - boxH / 2 + 105 + (idx * 44);
+      const bText = this.add.text(width / 2 - boxW / 2 + 30, yPos, r.bullet, {
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffb703',
+        fontFamily: 'Verdana'
+      }).setDepth(2002);
+
+      const mText = this.add.text(width / 2 - boxW / 2 + 55, yPos, r.text, {
+        fontSize: '12px',
+        color: '#f6eedb',
+        fontFamily: 'Verdana',
+        wordWrap: { width: boxW - 85 }
+      }).setDepth(2002);
+
+      ruleTexts.push(bText, mText);
+    });
+
+    // Dismiss Button
+    const btnY = height / 2 + boxH / 2 - 40;
+    const btn = this.add.rectangle(width / 2, btnY, 200, 38, 0xd97706)
+      .setStrokeStyle(2, 0xffb703)
+      .setDepth(2002)
+      .setInteractive({ useHandCursor: true });
+
+    const btnTxt = this.add.text(width / 2, btnY, 'ENTER SANCTUARY →', {
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#1a0903',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2003);
+
+    const dismiss = () => {
+      localStorage.setItem('modak_rules_acknowledged', 'true');
+      this.isTutorialActive = false;
+
+      // Clean destruction of all overlay elements
+      overlay.destroy();
+      box.destroy();
+      title.destroy();
+      sub.destroy();
+      btn.destroy();
+      btnTxt.destroy();
+      ruleTexts.forEach(t => t.destroy());
+
+      if (window.SoundFX) window.SoundFX.bell();
+    };
+
+    btn.on('pointerdown', dismiss);
+    this.input.keyboard.once('keydown-SPACE', dismiss);
+    this.input.keyboard.once('keydown-ENTER', dismiss);
+  }
+
   tickSecond() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isTutorialActive) return;
 
     // 1. Aarti Countdown
     this.timeLeft -= 1;
@@ -231,7 +329,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   triggerAutomaticBellAlert() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isTutorialActive) return;
 
     if (window.SoundFX) window.SoundFX.bell();
 
@@ -432,7 +530,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isTutorialActive) return;
 
     this.player.update();
 
