@@ -4,11 +4,12 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.createAudioSynthesizer();
-    this.generateProceduralTextures();
+    // Keep preload empty or for external files only
   }
 
   create() {
+    this.createAudioSynthesizer();
+    this.generateProceduralTextures();
     this.scene.start('GameScene');
   }
 
@@ -21,8 +22,7 @@ export default class BootScene extends Phaser.Scene {
       bell: () => {
         if (ctx.state === 'suspended') ctx.resume();
         const now = ctx.currentTime;
-        const freqs = [1046.5, 1567.98, 2093.0];
-        freqs.forEach((freq, idx) => {
+        [1046.5, 1567.98, 2093.0].forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
@@ -90,20 +90,20 @@ export default class BootScene extends Phaser.Scene {
       this.textures.addCanvas('floor_tile', cvs);
     }
 
-    // 2. High-Visibility Mooshak Sprite (Registered as BOTH player_tex and mooshak_tex)
+    // 2. High-Visibility Mooshak (Registered to BOTH 'player' and 'player_tex')
     {
       const cvs = document.createElement('canvas');
       cvs.width = 36;
       cvs.height = 24;
       const ctx = cvs.getContext('2d');
 
-      // Subtle shadow
+      // Shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
       ctx.ellipse(18, 16, 14, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Long curled pink tail
+      // Tail
       ctx.strokeStyle = '#f4a261';
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
@@ -112,13 +112,13 @@ export default class BootScene extends Phaser.Scene {
       ctx.quadraticCurveTo(0, 6, 4, 3);
       ctx.stroke();
 
-      // Plump Mouse Body
+      // Mouse Body
       ctx.fillStyle = '#9ca3af';
       ctx.beginPath();
       ctx.ellipse(17, 12, 11, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Saffron & Gold Ceremonial Saddle
+      // Saffron & Gold Saddle
       ctx.fillStyle = '#dc2626';
       ctx.fillRect(13, 6, 8, 12);
       ctx.strokeStyle = '#facc15';
@@ -131,7 +131,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.ellipse(26, 12, 6, 5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pink Nose & Whiskers
+      // Nose & Whiskers
       ctx.fillStyle = '#f472b6';
       ctx.beginPath();
       ctx.arc(31, 12, 1.8, 0, Math.PI * 2);
@@ -144,14 +144,14 @@ export default class BootScene extends Phaser.Scene {
       ctx.moveTo(28, 14); ctx.lineTo(34, 17);
       ctx.stroke();
 
-      // Bright Eyes
+      // Eyes
       ctx.fillStyle = '#000000';
       ctx.beginPath();
       ctx.arc(26, 9, 1.3, 0, Math.PI * 2);
       ctx.arc(26, 15, 1.3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Big Round Ears
+      // Ears
       const ear = (x, y) => {
         ctx.fillStyle = '#6b7280';
         ctx.beginPath();
@@ -165,11 +165,11 @@ export default class BootScene extends Phaser.Scene {
       ear(20, 5);
       ear(20, 19);
 
+      this.textures.addCanvas('player', cvs);
       this.textures.addCanvas('player_tex', cvs);
-      this.textures.addCanvas('mooshak_tex', cvs);
     }
 
-    // 3. Realistic Stealth Temple Prowler Cat (Pointed Feline Silhouette)
+    // 3. Realistic Sleek Temple Prowler Cat
     {
       const cvs = document.createElement('canvas');
       cvs.width = 44;
@@ -182,13 +182,13 @@ export default class BootScene extends Phaser.Scene {
       ctx.ellipse(22, 24, 16, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Elongated Arching Cat Torso
+      // Arching Cat Torso
       ctx.fillStyle = '#1e1b18';
       ctx.beginPath();
       ctx.ellipse(18, 22, 13, 7.5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Curved Cat Tail
+      // Long Curled Tail
       ctx.strokeStyle = '#1e1b18';
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
@@ -197,13 +197,13 @@ export default class BootScene extends Phaser.Scene {
       ctx.quadraticCurveTo(0, 14, 4, 8);
       ctx.stroke();
 
-      // Angular Cat Head
+      // Cat Head
       ctx.fillStyle = '#2b2621';
       ctx.beginPath();
       ctx.arc(29, 22, 7, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pointed Cat Ears (Erect Triangles)
+      // Pointed Triangular Cat Ears
       const ear = (x1, y1, tipX, tipY, x2, y2) => {
         ctx.fillStyle = '#1e1b18';
         ctx.beginPath();
@@ -223,8 +223,8 @@ export default class BootScene extends Phaser.Scene {
       ear(25, 16, 26, 8, 30, 15);
       ear(25, 28, 26, 36, 30, 29);
 
-      // Glowing Slit Eyes
-      ctx.fillStyle = '#10b981'; // Piercing emerald cat eyes
+      // Emerald Eyes with slit pupils
+      ctx.fillStyle = '#10b981';
       ctx.beginPath();
       ctx.arc(31, 19, 2, 0, Math.PI * 2);
       ctx.arc(31, 25, 2, 0, Math.PI * 2);
@@ -243,9 +243,10 @@ export default class BootScene extends Phaser.Scene {
       ctx.stroke();
 
       this.textures.addCanvas('guard_tex', cvs);
+      this.textures.addCanvas('guard', cvs);
     }
 
-    // 4. Artisanal Golden Modak
+    // 4. Modak
     {
       const cvs = document.createElement('canvas');
       cvs.width = 28;
@@ -271,51 +272,46 @@ export default class BootScene extends Phaser.Scene {
       this.textures.addCanvas('modak_tex', cvs);
     }
 
-    // 5. Sculpted Brass Lord Ganesha Murti & Stepped Altar (3D Shrine Statue)
+    // 5. 3D Sculpted Brass Lord Ganesha Murti Statue
     {
       const cvs = document.createElement('canvas');
       cvs.width = 72;
       cvs.height = 72;
       const ctx = cvs.getContext('2d');
 
-      // 1. Carved Stepped Stone/Brass Pedestal
+      // Stepped Pedestal
       ctx.fillStyle = '#291409';
-      ctx.fillRect(4, 48, 64, 20);
+      ctx.fillRect(4, 50, 64, 18);
       ctx.fillStyle = '#5c2d12';
-      ctx.fillRect(8, 42, 56, 8);
+      ctx.fillRect(8, 44, 56, 7);
       ctx.fillStyle = '#854d0e';
-      ctx.fillRect(12, 38, 48, 6);
-
-      // Pedestal Ornate Trim
+      ctx.fillRect(12, 39, 48, 6);
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(4, 48, 64, 20);
+      ctx.strokeRect(4, 50, 64, 18);
 
-      // 2. Glowing Halo (Prabhavali) behind Ganesha
-      const halo = ctx.createRadialGradient(36, 26, 4, 36, 26, 24);
-      halo.addColorStop(0, 'rgba(251, 191, 36, 0.65)');
-      halo.addColorStop(0.7, 'rgba(217, 119, 6, 0.3)');
+      // Golden Halo (Prabhavali)
+      const halo = ctx.createRadialGradient(36, 25, 4, 36, 25, 23);
+      halo.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
+      halo.addColorStop(0.7, 'rgba(217, 119, 6, 0.35)');
       halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(36, 26, 24, 0, Math.PI * 2);
+      ctx.arc(36, 25, 23, 0, Math.PI * 2);
       ctx.fill();
 
-      // Arch Ring
       ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(36, 26, 19, Math.PI * 0.85, Math.PI * 2.15);
+      ctx.arc(36, 25, 19, Math.PI * 0.85, Math.PI * 2.15);
       ctx.stroke();
 
-      // 3. Brass Ganesha Body
-      // Plump Belly (Lambodara)
+      // Brass Ganesha Body
       const brass = ctx.createLinearGradient(24, 15, 48, 42);
       brass.addColorStop(0, '#fef08a');
       brass.addColorStop(0.5, '#eab308');
       brass.addColorStop(1, '#a16207');
       ctx.fillStyle = brass;
-
       ctx.beginPath();
       ctx.ellipse(36, 36, 12, 10, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -323,7 +319,7 @@ export default class BootScene extends Phaser.Scene {
       // Saffron Dhoti
       ctx.fillStyle = '#ea580c';
       ctx.beginPath();
-      ctx.ellipse(36, 41, 10, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(36, 42, 10, 4, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Broad Elephant Ears
@@ -338,7 +334,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.arc(36, 22, 9, 0, Math.PI * 2);
       ctx.fill();
 
-      // High Ornate Crown (Mukut)
+      // High Crown (Mukut)
       ctx.fillStyle = '#fde047';
       ctx.beginPath();
       ctx.moveTo(36, 6);
@@ -351,7 +347,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.arc(36, 11, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Curved Elephant Trunk (Vakratunda)
+      // Curved Trunk
       ctx.strokeStyle = '#ca8a04';
       ctx.lineWidth = 3.5;
       ctx.lineCap = 'round';
@@ -360,7 +356,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.quadraticCurveTo(39, 32, 33, 34);
       ctx.stroke();
 
-      // Sacred Tilak & Modak in Hand
+      // Tilak
       ctx.fillStyle = '#dc2626';
       ctx.fillRect(35, 17, 2, 4);
 
@@ -370,7 +366,7 @@ export default class BootScene extends Phaser.Scene {
       ctx.arc(28, 34, 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Right hand Abhaya Mudra (blessing)
+      // Right hand Abhaya Mudra
       ctx.fillStyle = '#eab308';
       ctx.beginPath();
       ctx.arc(44, 32, 2.8, 0, Math.PI * 2);
