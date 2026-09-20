@@ -180,59 +180,98 @@ export default class BootScene extends Phaser.Scene {
       drawEar(21, 6);
       drawEar(21, 18);
 
-      this.textures.addCanvas('mooshak_tex', cvs);
+      this.textures.addCanvas('player_tex', cvs);
     }
 
-    // 3. Ornate Temple Guard (Turban, Brass Armor, and Handheld Brass Lantern)
+    // 3. Procedural Temple Prowler Cat (Replaces human guard with sleek temple feline)
     {
       const cvs = document.createElement('canvas');
-      cvs.width = 40;
-      cvs.height = 40;
+      cvs.width = 44;
+      cvs.height = 44;
       const ctx = cvs.getContext('2d');
 
-      // Directional Floor Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      // Feline Floor Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
       ctx.beginPath();
-      ctx.ellipse(20, 22, 14, 10, 0, 0, Math.PI * 2);
+      ctx.ellipse(22, 24, 15, 9, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Shoulders / Royal Kurta (Deep Crimson)
-      ctx.fillStyle = '#991b1b';
+      // Sleek Dark Prowling Cat Body
+      const furGrad = ctx.createRadialGradient(20, 20, 2, 20, 20, 14);
+      furGrad.addColorStop(0, '#3e2723');
+      furGrad.addColorStop(0.7, '#271711');
+      furGrad.addColorStop(1, '#150a06');
+      ctx.fillStyle = furGrad;
       ctx.beginPath();
-      ctx.ellipse(20, 20, 11, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(20, 20, 13, 9, -0.15, 0, Math.PI * 2);
       ctx.fill();
 
-      // Brass Chest Armor
-      ctx.fillStyle = '#d97706';
+      // Curled Prowler Tail
+      ctx.strokeStyle = '#271711';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.ellipse(20, 20, 7, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 1;
+      ctx.moveTo(8, 22);
+      ctx.quadraticCurveTo(2, 20, 3, 13);
+      ctx.quadraticCurveTo(5, 7, 9, 8);
       ctx.stroke();
 
-      // Royal Patrolling Turban (Saffron / Marigold Pheta with gold jewel)
-      const turbanGrad = ctx.createRadialGradient(20, 19, 2, 20, 19, 9);
-      turbanGrad.addColorStop(0, '#f59e0b');
-      turbanGrad.addColorStop(0.8, '#d97706');
-      turbanGrad.addColorStop(1, '#b45309');
-      ctx.fillStyle = turbanGrad;
+      // Cat Head
+      ctx.fillStyle = '#271711';
       ctx.beginPath();
-      ctx.arc(20, 19, 8.5, 0, Math.PI * 2);
+      ctx.arc(31, 19, 7.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Turban Jewel (Sirpech)
-      ctx.fillStyle = '#ef4444';
+      // Pointed Cat Ears (Triangular with reddish-pink interior)
+      const drawCatEar = (x1, y1, tipX, tipY, x2, y2) => {
+        ctx.fillStyle = '#150a06';
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(tipX, tipY);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ff8a80';
+        ctx.beginPath();
+        ctx.moveTo(x1 + 1, y1);
+        ctx.lineTo(tipX, tipY + 2);
+        ctx.lineTo(x2 - 1, y2);
+        ctx.closePath();
+        ctx.fill();
+      };
+      drawCatEar(27, 13, 28, 6, 32, 12);
+      drawCatEar(31, 13, 36, 7, 36, 15);
+
+      // Glowing Amber Predator Eyes
+      ctx.fillStyle = '#ffb703';
       ctx.beginPath();
-      ctx.arc(26, 19, 2, 0, Math.PI * 2);
+      ctx.arc(33, 17, 1.8, 0, Math.PI * 2);
+      ctx.arc(33, 21, 1.8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Hand-held Brass Lantern projecting forward
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(29, 24, 6, 6);
+      // Slit Pupils
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(33, 16, 0.9, 2);
+      ctx.fillRect(33, 20, 0.9, 2);
+
+      // Fine Whiskers
+      ctx.strokeStyle = 'rgba(255, 214, 165, 0.85)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(35, 18); ctx.lineTo(42, 16);
+      ctx.moveTo(35, 19); ctx.lineTo(43, 19);
+      ctx.moveTo(35, 20); ctx.lineTo(42, 22);
+      ctx.stroke();
+
+      // Brass Temple Lantern Collar Bell
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.arc(28, 25, 3, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#fbbf24';
       ctx.beginPath();
-      ctx.arc(32, 27, 2.5, 0, Math.PI * 2);
+      ctx.arc(28, 25, 1.5, 0, Math.PI * 2);
       ctx.fill();
 
       this.textures.addCanvas('guard_tex', cvs);

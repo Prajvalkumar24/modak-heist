@@ -15,12 +15,12 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    // Check if player is opening for the first time
+    // First-Time User Tutorial Check
     if (!localStorage.getItem('modak_rules_acknowledged')) {
       this.showFirstTimeScroll(width, height);
     }
 
-    // Enable multi-touch pointers so both thumbs register at the same time
+    // Enable multi-touch pointers so both thumbs register simultaneously
     this.input.addPointer(2);
 
     this.targetModaks = Math.min(4 + this.currentLevel, 10);
@@ -49,10 +49,13 @@ export default class GameScene extends Phaser.Scene {
       'floor_tile'
     ).setDepth(0);
 
-    // 2. Clean Top HUD (No Bell Ammo)
+    // 2. Clean Top HUD
     this.createHeaderHUD(width);
 
-    // 3. Game Timer & Idle Check Loop (1 second tick)
+    // 3. First-Tap Mission Toast Banner
+    this.showMissionToast(width);
+
+    // 4. Game Timer & Idle Loop (1 second tick)
     this.timerEvent = this.time.addEvent({
       delay: 1000,
       callback: this.tickSecond,
@@ -60,11 +63,11 @@ export default class GameScene extends Phaser.Scene {
       loop: true
     });
 
-    // 4. Temple Walls & Pillars
+    // 5. Temple Walls & Pillars
     this.walls = this.physics.add.staticGroup();
     this.spawnStructuredMap();
 
-    // 5. Lord Ganesha Sanctum & Diyas
+    // 6. Lord Ganesha Sanctum & Diyas
     const altarX = this.arena.x + this.arena.w / 2;
     const altarY = this.arena.y + 60;
     this.altar = this.physics.add.sprite(altarX, altarY, 'altar_tex').setDepth(10);
@@ -77,7 +80,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.spawnSanctumLamps(altarX, altarY);
 
-    // 6. Player (Mooshak)
+    // 7. Player (Mooshak)
     this.player = new Player(this, this.arena.x + 100, this.arena.y + this.arena.h - 50);
     this.lastPlayerPos = { x: this.player.x, y: this.player.y };
     this.physics.add.collider(this.player, this.walls);
@@ -92,7 +95,7 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 5, y: 2 }
     }).setOrigin(0.5).setDepth(30).setVisible(false);
 
-    // 7. Guards
+    // 8. Temple Prowler Cats
     this.guards = [];
     for (let i = 0; i < this.guardCount; i++) {
       const guard = new Guard(this, this.arena);
@@ -101,11 +104,11 @@ export default class GameScene extends Phaser.Scene {
       this.guards.push(guard);
     }
 
-    // 8. Modaks
+    // 9. Modaks
     this.modaks = this.physics.add.group();
     this.spawnSafeModaks();
 
-    // 9. Mobile & Tablet Only Controls (Strictly excluded on laptops)
+    // 10. Mobile & Tablet Only Controls (Strictly hidden on laptops)
     const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && window.matchMedia('(hover: none)').matches);
 
@@ -116,6 +119,117 @@ export default class GameScene extends Phaser.Scene {
     // Overlaps
     this.physics.add.overlap(this.player, this.modaks, this.collectModak, null, this);
     this.physics.add.overlap(this.player, this.altar, this.reachAltar, null, this);
+  }
+
+  showMissionToast(width) {
+    const toastContainer = this.add.container(width / 2, -50).setDepth(1500);
+    const bg = this.add.rectangle(0, 0, Math.min(width - 40, 600), 40, 0x1a0903, 0.95);
+    bg.setStrokeStyle(2, 0xffb703);
+
+    const txt = this.add.text(0, 0, '🐾 STEALTH MISSION: Avoid Temple Cats, gather Modaks & reach the altar!', {
+      fontSize: '12px',
+      fontStyle: 'bold',
+      color: '#ffd166',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5);
+
+    toastContainer.add([bg, txt]);
+
+    this.tweens.add({
+      targets: toastContainer,
+      y: 72,
+      duration: 500,
+      ease: 'Back.easeOut',
+      hold: 3500,
+      yoyo: true,
+      onComplete: () => toastContainer.destroy()
+    });
+  }
+
+  showFirstTimeScroll(width, height) {
+    this.isTutorialActive = true;
+
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x070302, 0.93)
+      .setDepth(2000)
+      .setInteractive();
+
+    const boxW = Math.min(width - 48, 640);
+    const boxH = Math.min(height - 40, 420);
+    const box = this.add.rectangle(width / 2, height / 2, boxW, boxH, 0x1a0a05)
+      .setStrokeStyle(3, 0xffb703)
+      .setDepth(2001);
+
+    const title = this.add.text(width / 2, height / 2 - boxH / 2 + 35, '॥ HOW TO PLAY ॥', {
+      fontSize: '22px',
+      fontStyle: 'bold',
+      color: '#ffd166',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2002);
+
+    const sub = this.add.text(width / 2, height / 2 - boxH / 2 + 65, "Mooshak's Sacred Seva: Temple Rules", {
+      fontSize: '13px',
+      color: '#d4a373',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2002);
+
+    const rules = [
+      { bullet: '1.', text: 'Collect all Modaks scattered in the courtyard before the Aarti timer runs out.' },
+      { bullet: '2.', text: 'Once all Modaks are gathered, reach the top Sanctum altar to present the offering.' },
+      { bullet: '3.', text: "Stay out of the temple cats' golden vision cones! One touch ends your run." },
+      { bullet: '4.', text: 'DO NOT IDLE: Stopping for 8s sounds your bell, drawing cats directly to you.' },
+      { bullet: '5.', text: 'Laptop: WASD / Arrow Keys | Mobile: Use the left and right touch pads.' }
+    ];
+
+    const ruleTexts = [];
+    rules.forEach((r, idx) => {
+      const yPos = height / 2 - boxH / 2 + 105 + (idx * 44);
+      const bText = this.add.text(width / 2 - boxW / 2 + 30, yPos, r.bullet, {
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffb703',
+        fontFamily: 'Verdana'
+      }).setDepth(2002);
+
+      const mText = this.add.text(width / 2 - boxW / 2 + 55, yPos, r.text, {
+        fontSize: '12px',
+        color: '#f6eedb',
+        fontFamily: 'Verdana',
+        wordWrap: { width: boxW - 85 }
+      }).setDepth(2002);
+
+      ruleTexts.push(bText, mText);
+    });
+
+    const btnY = height / 2 + boxH / 2 - 40;
+    const btn = this.add.rectangle(width / 2, btnY, 200, 38, 0xd97706)
+      .setStrokeStyle(2, 0xffb703)
+      .setDepth(2002)
+      .setInteractive({ useHandCursor: true });
+
+    const btnTxt = this.add.text(width / 2, btnY, 'ENTER SANCTUARY →', {
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#1a0903',
+      fontFamily: 'Verdana'
+    }).setOrigin(0.5).setDepth(2003);
+
+    const dismiss = () => {
+      localStorage.setItem('modak_rules_acknowledged', 'true');
+      this.isTutorialActive = false;
+      overlay.destroy();
+      box.destroy();
+      title.destroy();
+      sub.destroy();
+      btn.destroy();
+      btnTxt.destroy();
+      ruleTexts.forEach(t => t.destroy());
+
+      if (window.SoundFX) window.SoundFX.bell();
+    };
+
+    btn.on('pointerdown', dismiss);
+    this.input.keyboard.once('keydown-SPACE', dismiss);
+    this.input.keyboard.once('keydown-ENTER', dismiss);
   }
 
   createHeaderHUD(width) {
@@ -152,12 +266,10 @@ export default class GameScene extends Phaser.Scene {
     const padY = height - 85;
 
     const makeBtn = (x, y, label, axis, dir) => {
-      // Outer ring
       this.add.circle(x, y, 36, 0x1f0a04, 0.85)
         .setStrokeStyle(3, 0xd4a373)
         .setDepth(500);
 
-      // Inner pad with hit area
       const innerPad = this.add.circle(x, y, 30, 0x3d1708, 0.95)
         .setStrokeStyle(2, 0xffb703)
         .setInteractive(new Phaser.Geom.Circle(30, 30, 36), Phaser.Geom.Circle.Contains)
@@ -195,118 +307,20 @@ export default class GameScene extends Phaser.Scene {
       innerPad.on('pointerout', releaseBtn);
     };
 
-    // Left Thumb: Vertical Movement (Up / Down)
     makeBtn(leftPadX, padY - 48, '▲', 'y', -1);
     makeBtn(leftPadX, padY + 48, '▼', 'y', 1);
-
-    // Right Thumb: Horizontal Movement (Left / Right)
     makeBtn(rightPadX - 48, padY, '◄', 'x', -1);
     makeBtn(rightPadX + 48, padY, '►', 'x', 1);
-  }
-
-  showFirstTimeScroll(width, height) {
-    this.isTutorialActive = true;
-
-    // Dark backdrop overlay that absorbs touches underneath
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x070302, 0.93)
-      .setDepth(2000)
-      .setInteractive();
-
-    // Sacred Temple Card
-    const boxW = Math.min(width - 48, 640);
-    const boxH = Math.min(height - 40, 420);
-    const box = this.add.rectangle(width / 2, height / 2, boxW, boxH, 0x1a0a05)
-      .setStrokeStyle(3, 0xffb703)
-      .setDepth(2001);
-
-    // Titles
-    const title = this.add.text(width / 2, height / 2 - boxH / 2 + 35, '॥ HOW TO PLAY ॥', {
-      fontSize: '22px',
-      fontStyle: 'bold',
-      color: '#ffd166',
-      fontFamily: 'Verdana'
-    }).setOrigin(0.5).setDepth(2002);
-
-    const sub = this.add.text(width / 2, height / 2 - boxH / 2 + 65, "Mooshak's Sacred Seva: Temple Rules", {
-      fontSize: '13px',
-      color: '#d4a373',
-      fontFamily: 'Verdana'
-    }).setOrigin(0.5).setDepth(2002);
-
-    // Rule items
-    const rules = [
-      { bullet: '1.', text: 'Collect all Modaks scattered in the courtyard before the Aarti timer runs out.' },
-      { bullet: '2.', text: 'Once all Modaks are gathered, reach the top Sanctum altar to present the offering.' },
-      { bullet: '3.', text: "Stay out of the guards' golden vision cones! One touch ends your run." },
-      { bullet: '4.', text: 'DO NOT IDLE: Stopping for 8s sounds your bell, drawing guards directly to you.' },
-      { bullet: '5.', text: 'Laptop: WASD / Arrow Keys | Mobile: Use the left and right touch pads.' }
-    ];
-
-    const ruleTexts = [];
-    rules.forEach((r, idx) => {
-      const yPos = height / 2 - boxH / 2 + 105 + (idx * 44);
-      const bText = this.add.text(width / 2 - boxW / 2 + 30, yPos, r.bullet, {
-        fontSize: '14px',
-        fontStyle: 'bold',
-        color: '#ffb703',
-        fontFamily: 'Verdana'
-      }).setDepth(2002);
-
-      const mText = this.add.text(width / 2 - boxW / 2 + 55, yPos, r.text, {
-        fontSize: '12px',
-        color: '#f6eedb',
-        fontFamily: 'Verdana',
-        wordWrap: { width: boxW - 85 }
-      }).setDepth(2002);
-
-      ruleTexts.push(bText, mText);
-    });
-
-    // Dismiss Button
-    const btnY = height / 2 + boxH / 2 - 40;
-    const btn = this.add.rectangle(width / 2, btnY, 200, 38, 0xd97706)
-      .setStrokeStyle(2, 0xffb703)
-      .setDepth(2002)
-      .setInteractive({ useHandCursor: true });
-
-    const btnTxt = this.add.text(width / 2, btnY, 'ENTER SANCTUARY →', {
-      fontSize: '13px',
-      fontStyle: 'bold',
-      color: '#1a0903',
-      fontFamily: 'Verdana'
-    }).setOrigin(0.5).setDepth(2003);
-
-    const dismiss = () => {
-      localStorage.setItem('modak_rules_acknowledged', 'true');
-      this.isTutorialActive = false;
-
-      // Clean destruction of all overlay elements
-      overlay.destroy();
-      box.destroy();
-      title.destroy();
-      sub.destroy();
-      btn.destroy();
-      btnTxt.destroy();
-      ruleTexts.forEach(t => t.destroy());
-
-      if (window.SoundFX) window.SoundFX.bell();
-    };
-
-    btn.on('pointerdown', dismiss);
-    this.input.keyboard.once('keydown-SPACE', dismiss);
-    this.input.keyboard.once('keydown-ENTER', dismiss);
   }
 
   tickSecond() {
     if (this.isGameOver || this.isTutorialActive) return;
 
-    // 1. Aarti Countdown
     this.timeLeft -= 1;
     this.timerText.setText(`Aarti: ${this.timeLeft}s`);
     if (this.timeLeft <= 10) this.timerText.setColor('#ff3333');
     if (this.timeLeft <= 0) this.handleDefeat('Aarti began before offerings reached Ganesha!');
 
-    // 2. Idle Detection (rings bell automatically after 8 seconds of camping)
     const distMoved = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.lastPlayerPos.x, this.lastPlayerPos.y);
 
     if (distMoved < 4) {
@@ -333,7 +347,6 @@ export default class GameScene extends Phaser.Scene {
 
     if (window.SoundFX) window.SoundFX.bell();
 
-    // Expanding chime wave
     const wave = this.add.circle(this.player.x, this.player.y, 12, 0xffd166, 0.7).setDepth(14);
     this.tweens.add({
       targets: wave,
@@ -343,7 +356,6 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => wave.destroy()
     });
 
-    // Guards within range rush to inspect the sound
     const alertPoint = { x: this.player.x, y: this.player.y };
     this.guards.forEach(g => {
       const dist = Phaser.Math.Distance.Between(g.x, g.y, alertPoint.x, alertPoint.y);
@@ -465,7 +477,7 @@ export default class GameScene extends Phaser.Scene {
     modak.destroy();
     if (window.SoundFX) window.SoundFX.bell();
     this.score += 1;
-    this.totalModaks += 1; // 1 modak = 1 lifetime point
+    this.totalModaks += 1;
     this.scoreText.setText(`Modaks: ${this.score} / ${this.targetModaks}`);
 
     if (this.score >= this.targetModaks) {
@@ -540,7 +552,7 @@ export default class GameScene extends Phaser.Scene {
 
     for (const g of this.guards) {
       g.update(this.player, this.walls.getChildren(), () => {
-        this.handleDefeat('A Temple Guard captured Mooshak!');
+        this.handleDefeat('A Prowling Temple Cat pounced on Mooshak!');
       });
     }
   }
